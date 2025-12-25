@@ -1,0 +1,9 @@
+{
+  "projectname": "Nana-Miniprogram-Carwah",
+  "appid": "fc3019130994428741",
+  "compileType": "miniprogram",
+  "projectType": 0,
+  "buildOption": {
+    "compilerSource": "wx"
+  }
+}
