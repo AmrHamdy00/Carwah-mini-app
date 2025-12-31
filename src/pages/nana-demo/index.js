@@ -1,7 +1,7 @@
 import { View, Text, Button, Input, Image } from '@tarojs/components'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Taro from '@tarojs/taro'
-import { NanaConf } from '../../nana-sdk'
+import { NanaConf, NanaConfig } from '../../nana-sdk'
 import './index.css'
 
 export default function NanaDemo() {
@@ -9,29 +9,19 @@ export default function NanaDemo() {
   const [loading, setLoading] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState('')
   const [cartStatus, setCartStatus] = useState('')
-  console.log(NanaConf, "NanaConf")
+
+  useEffect(() => {
+    handleGetUserInfo()
+  }, [])
 
   // Mock Products (Cars)
   const cars = [
     {
       id: 'car_001',
       name: 'Toyota Camry 2024',
+      type: 'Sedan • 5 Seats',
       price: 100.00,
       image: 'https://img.freepik.com/free-photo/silver-sedan-car-with-modern-design-road_114579-4384.jpg',
-      retailer_id: 'carwah_rental'
-    },
-    {
-      id: 'car_002',
-      name: 'Hyundai Sonata 2024',
-      price: 95.00,
-      image: 'https://img.freepik.com/free-photo/blue-sedan-car-road_114579-4122.jpg',
-      retailer_id: 'carwah_rental'
-    },
-    {
-      id: 'car_003',
-      name: 'Nissan Altima 2024',
-      price: 98.00,
-      image: 'https://img.freepik.com/free-photo/white-suv-car-road_114579-4089.jpg',
       retailer_id: 'carwah_rental'
     }
   ]
@@ -54,16 +44,15 @@ export default function NanaDemo() {
         userMobile: mobileRes && (mobileRes.userMobile || mobileRes),
         address: addrRes && (addrRes.address || addrRes),
         language: langRes && (langRes.language || langRes),
-        isLoggedIn: loginRes && loginRes.isLoggedIn,
-        token: tokenRes && tokenRes.token,
-        userId: idRes && idRes.userId
+        isLoggedIn: loginRes && (loginRes.isLoggedIn || loginRes === true),
+        token: tokenRes && (tokenRes.token || tokenRes.data?.token || (typeof tokenRes === 'string' ? tokenRes : null)),
+        userId: idRes && (idRes.userId || idRes.id || idRes)
       }
       setUserInfo(info)
-      Taro.showToast({ title: 'Loaded', icon: 'success' })
       return info;
     } catch (error) {
       console.error(error)
-      Taro.showToast({ title: 'Failed', icon: 'none' })
+      Taro.showToast({ title: 'Login Failed', icon: 'none' })
       return null;
     } finally {
       setLoading(false)
@@ -98,33 +87,33 @@ export default function NanaDemo() {
   }
 
   // --- 3. Payment Flow ---
-  // Backend call to create payment session
   const createPaymentSession = async (userToken, amount) => {
-    // NOTE: In a real production app, this call should go to YOUR backend (MiniApp Backend),
-    // which then calls the Nana API securely. Calling Nana API directly from frontend 
-    // requires exposing your MiniApp API Key, which is NOT recommended for production.
+    const payload = {
+      amount: amount,
+      reference: 'order_' + new Date().getTime() // Unique reference
+    };
     
-    // For this demo/development, we will call the Nana API directly if CORS/Security allows,
-    // or you should replace this URL with your middleware backend URL.
-    
-    // Using the endpoint from docs: https://miniapps.nana.sa/api/v2/mobile-user-activities/create-payment-session
-    
-    const miniAppApiKey = 'YOUR_MINIAPP_API_KEY_HERE'; // TODO: Replace with real key
-    
+    console.log('--- Creating Payment Session ---');
+    console.log('URL:', NanaConfig.PAYMENT_SESSION_URL);
+    console.log('Headers:', {
+      'Content-Type': 'application/json',
+      'miniapp-api-key': NanaConfig.API_KEY,
+      'miniapp-user-token': `Bearer ${userToken}`
+    });
+    console.log('Payload:', payload);
+
     return new Promise((resolve, reject) => {
       Taro.request({
-        url: 'https://miniapps.nana.sa/api/v2/mobile-user-activities/create-payment-session',
+        url: NanaConfig.PAYMENT_SESSION_URL,
         method: 'POST',
         header: {
           'Content-Type': 'application/json',
-          'miniapp-api-key': miniAppApiKey,
+          'miniapp-api-key': NanaConfig.API_KEY,
           'miniapp-user-token': `Bearer ${userToken}`
         },
-        data: {
-          amount: amount,
-          reference: 'order_' + new Date().getTime() // Unique reference
-        },
+        data: payload,
         success: (res) => {
+          console.log('Payment Session Response:', res);
           if (res.statusCode >= 200 && res.statusCode < 300 && res.data.success) {
             resolve(res.data);
           } else {
@@ -142,22 +131,29 @@ export default function NanaDemo() {
 
   const handleCheckout = async () => {
     setLoading(true)
-    setPaymentStatus('Starting checkout...')
+    setPaymentStatus('Processing Checkout...')
     
     try {
       // Step 1: Get User Token
+      console.log('Current userInfo:', userInfo);
       let token = userInfo?.token;
+      
       if (!token) {
+         console.log('Token missing in state, attempting refetch...');
          const info = await handleGetUserInfo();
+         console.log('Refetched info:', info);
          token = info?.token;
       }
 
       if (!token) {
+        // Fallback for testing if no real token is available (e.g. web mock)
+        console.warn('Still no token found. If running in mock mode, this will fail unless mocked.');
         throw new Error('User not logged in or token missing');
       }
 
-      // Step 2: Create Payment Session (Real API Call)
-      setPaymentStatus('Creating payment session...')
+      console.log('Using Token:', token);
+
+      // Step 2: Create Payment Session
       const sessionRes = await createPaymentSession(token, 100.00); 
       
       if (!sessionRes.success) {
@@ -165,22 +161,18 @@ export default function NanaDemo() {
       }
 
       // Step 3: Process Payment via Nana SDK
-      setPaymentStatus('Processing payment...')
-      
-      // Get App ID dynamically
       const accountInfo = Taro.getAccountInfoSync();
-      const miniAppId = accountInfo.miniProgram.appId;
+      const miniAppId = accountInfo.miniProgram.appId || NanaConfig.MINI_APP_ID;
       
       const paymentData = {
         ...sessionRes.data,
         mini_app_id: miniAppId
       };
 
-      const result = await NanaConf.orderPayment(paymentData);
+      await NanaConf.orderPayment(paymentData);
       
       setPaymentStatus('Payment Successful!');
       Taro.showToast({ title: 'Paid!', icon: 'success' })
-      console.log('Payment Result:', result);
 
     } catch (error) {
        console.error(error);
@@ -188,84 +180,109 @@ export default function NanaDemo() {
        Taro.showToast({ title: 'Error', icon: 'none' })
     } finally {
       setLoading(false)
+      setTimeout(() => setPaymentStatus(''), 3000);
     }
   }
 
   // --- 4. Navigation ---
   const handleCloseMiniApp = async () => {
     try {
-      // In a real app, you might get this ID dynamically or from config
-      await NanaConf.closeMiniApp('current_miniapp_id')
+      await NanaConf.closeMiniApp(NanaConfig.MINI_APP_ID)
     } catch (error) {
       console.error('Close MiniApp failed:', error)
     }
   }
 
-  const handleCloseAndDeepLink = async () => {
-    try {
-      await NanaConf.closeMiniAppAndOpenDeepLink('current_miniapp_id', 'nana://home')
-    } catch (error) {
-      console.error('Close & DeepLink failed:', error)
-    }
-  }
-
   return (
     <View className='nana-demo'>
-      <View className='header'>
-        <Text className='title'>Nana Super App Demo</Text>
-      </View>
-
-      <View className='section'>
-        <Text className='section-title'>1. User & Identity</Text>
-        <Button className='btn' onClick={handleGetUserInfo} disabled={loading}>Get Profile</Button>
-        {userInfo && (
-          <View className='info-box'>
-            {userInfo.userName && <Text>Name: {userInfo.userName}</Text>}
-            {userInfo.userId && <Text>ID: {userInfo.userId}</Text>}
-            {userInfo.userMobile && <Text>Mobile: {userInfo.userMobile}</Text>}
-            {userInfo.language && <Text>Language: {userInfo.language}</Text>}
-            {userInfo.token && <Text className='token'>Token: {userInfo.token.substring(0, 10)}...</Text>}
-            {userInfo.address && (
-              <Text>
-                Address: {userInfo.address.title || ''} {userInfo.address.city ? `(${userInfo.address.city})` : ''}
-              </Text>
-            )}
-          </View>
-        )}
-      </View>
-
-      <View className='section'>
-        <Text className='section-title'>2. Carwah Products</Text>
-        <View className='products-grid'>
-          {cars.map(car => (
-            <View key={car.id} className='product-card'>
-              <Image src={car.image} className='product-image' mode='aspectFill' />
-              <View className='product-info'>
-                <Text className='product-name'>{car.name}</Text>
-                <Text className='product-price'>{car.price} SAR / Day</Text>
-                <Button 
-                  className='btn btn-sm' 
-                  onClick={() => handleAddToCart(car)} 
-                  disabled={loading}
-                >
-                  Add to Cart
-                </Button>
-              </View>
-            </View>
-          ))}
+      {/* 1. Header Strip */}
+      <View className='header-strip'>
+        <Text className='brand-title'>Carwah</Text>
+        <View className='user-status'>
+          {userInfo ? `Hi, ${userInfo.userName || 'User'}` : 'Loading...'}
         </View>
-        
-        {cartStatus && <Text className='result'>{cartStatus}</Text>}
-        <View style={{height: 10}}></View>
-        <Button className='btn btn-primary' onClick={handleCheckout} disabled={loading}>Checkout & Pay (100 SAR)</Button>
-        {paymentStatus && <Text className='result'>{paymentStatus}</Text>}
       </View>
 
-      <View className='section'>
-        <Text className='section-title'>3. Navigation</Text>
-        <Button className='btn' onClick={handleCloseMiniApp}>Close MiniApp</Button>
-        <View style={{height: 10}}></View>
-        <Button className='btn' onClick={handleCloseAndDeepLink}>Close & Open Nana Home</Button>
+      {/* 2. Hero Section */}
+      <View className='hero-section'>
+        <Text className='hero-title'>Find Your Perfect Ride</Text>
+        <Text className='hero-subtitle'>Premium cars at affordable daily rates</Text>
+        
+        {/* Mock Search Box */}
+        <View className='search-box'>
+          <Text className='search-input-mock'>📍 Pickup Location: Riyadh</Text>
+          <Text className='search-input-mock'>📅 Pickup Date: Today, 10:00 AM</Text>
+        </View>
+      </View>
+
+      {/* 3. Products Grid */}
+      {userInfo && (
+        <>
+          <View className='section-header'>
+            <Text className='section-title'>Available Cars</Text>
+            <Text className='see-all'>View All</Text>
+          </View>
+
+          <View className='products-grid'>
+            {cars.map(car => (
+              <View key={car.id} className='product-card'>
+                <Image src={car.image} className='product-image' mode='aspectFill' />
+                <View className='product-info'>
+                  <Text className='product-name'>{car.name}</Text>
+                  <Text className='product-meta'>{car.type}</Text>
+                  <View className='card-footer'>
+                    <View className='price-tag'>
+                      <Text className='price-amount'>{car.price}</Text>
+                      <Text className='price-unit'>SAR / Day</Text>
+                    </View>
+                    <Button 
+                      className='btn-add' 
+                      onClick={() => handleAddToCart(car)} 
+                      disabled={loading}
+                    >
+                      Rent Now
+                    </Button>
+                  </View>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* 4. Checkout Bar (Fixed Bottom) */}
+      <View className='checkout-bar'>
+        <View className='cart-summary'>
+          <Text className='total-label'>Total Amount</Text>
+          <Text className='total-amount'>100.00 SAR</Text>
+        </View>
+        <Button 
+          className='btn-checkout' 
+          onClick={handleCheckout} 
+          disabled={loading}
+        >
+          Checkout
+        </Button>
+      </View>
+
+      {/* 5. Status Overlays */}
+      {loading && (
+        <View className='loading-overlay'>
+          <Text>Loading...</Text>
+        </View>
+      )}
+      
+      {paymentStatus && (
+        <View className='payment-status'>
+          <Text>{paymentStatus}</Text>
+        </View>
+      )}
+      
+      {/* Footer / Exit Links */}
+      <View style={{ padding: '20px', textAlign: 'center', marginTop: '20px' }}>
+        <Text onClick={handleCloseMiniApp} style={{ color: '#999', fontSize: '12px', textDecoration: 'underline' }}>
+          Back to Nana App
+        </Text>
       </View>
     </View>
   )
