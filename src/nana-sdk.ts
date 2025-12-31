@@ -2,8 +2,7 @@
 // Wraps the 'ft' global object exposed by the Nana host app
 
 // Ensure 'ft' is defined (it should be in the FinClip/MiniProgram environment)
-// @ts-ignore
-const ft = (typeof window !== 'undefined' && window.ft) || (typeof global !== 'undefined' && global.ft) || {};
+const ft: any = (typeof window !== 'undefined' && (window as any).ft) || (typeof global !== 'undefined' && (global as any).ft) || {};
 
 export const NanaConfig = {
   // Configuration Constants
