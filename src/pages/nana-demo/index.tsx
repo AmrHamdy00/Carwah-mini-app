@@ -22,6 +22,14 @@ export default function NanaDemo() {
       price: 100.00,
       image: 'https://img.freepik.com/free-photo/silver-sedan-car-with-modern-design-road_114579-4384.jpg',
       retailer_id: 'carwah_rental'
+    },
+    {
+      id: 'car_002',
+      name: 'Nissan Patrol 2024',
+      type: 'SUV • 7 Seats',
+      price: 250.00,
+      image: 'https://img.freepik.com/free-photo/white-off-road-car-driving-road_114579-4009.jpg',
+      retailer_id: 'carwah_rental'
     }
   ]
 
@@ -195,39 +203,35 @@ export default function NanaDemo() {
       </View>
 
       {/* 3. Products Grid */}
-      {userInfo && (
-        <>
-          <View className='section-header'>
-            <Text className='section-title'>Available Cars</Text>
-            <Text className='see-all'>View All</Text>
-          </View>
+      <View className='section-header'>
+        <Text className='section-title'>Available Cars</Text>
+        <Text className='see-all'>View All</Text>
+      </View>
 
-          <View className='products-grid'>
-            {cars.map(car => (
-              <View key={car.id} className='product-card'>
-                <Image src={car.image} className='product-image' mode='aspectFill' />
-                <View className='product-info'>
-                  <Text className='product-name'>{car.name}</Text>
-                  <Text className='product-meta'>{car.type}</Text>
-                  <View className='card-footer'>
-                    <View className='price-tag'>
-                      <Text className='price-amount'>{car.price}</Text>
-                      <Text className='price-unit'>SAR / Day</Text>
-                    </View>
-                    <Button 
-                      className='btn-add' 
-                      onClick={() => handleCheckout(car.price)} 
-                      disabled={loading}
-                    >
-                      Book & Pay
-                    </Button>
-                  </View>
+      <View className='products-grid'>
+        {cars.map(car => (
+          <View key={car.id} className='product-card'>
+            <Image src={car.image} className='product-image' mode='aspectFill' />
+            <View className='product-info'>
+              <Text className='product-name'>{car.name}</Text>
+              <Text className='product-meta'>{car.type}</Text>
+              <View className='card-footer'>
+                <View className='price-tag'>
+                  <Text className='price-amount'>{car.price}</Text>
+                  <Text className='price-unit'>SAR / Day</Text>
                 </View>
+                <Button 
+                  className='btn-add' 
+                  onClick={() => handleCheckout(car.price)} 
+                  disabled={loading}
+                >
+                  Rent
+                </Button>
               </View>
-            ))}
+            </View>
           </View>
-        </>
-      )}
+        ))}
+      </View>
 
       {/* 4. Status Overlays */}
       {loading && (
