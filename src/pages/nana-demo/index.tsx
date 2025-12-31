@@ -8,7 +8,6 @@ export default function NanaDemo() {
   const [userInfo, setUserInfo] = useState(null)
   const [loading, setLoading] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState('')
-  const [cartStatus, setCartStatus] = useState('')
 
   useEffect(() => {
     handleGetUserInfo()
@@ -59,62 +58,37 @@ export default function NanaDemo() {
     }
   }
 
-  // --- 2. Add to Cart ---
-  const handleAddToCart = async (car) => {
-    setLoading(true)
-    try {
-      const res = await NanaConf.addToCart({
-        retailer_id: car.retailer_id,
-        pid: car.id,
-        quantity: 1,
-        image: car.image,
-        price: car.price,
-        promotionId: '',
-        name: car.name,
-        addedFrom: 'miniapp',
-        resolvedBidId: '',
-        pricingStyle: 'standard'
-      })
-      setCartStatus(`Added ${car.name}`)
-      Taro.showToast({ title: 'Added', icon: 'success' })
-    } catch (error) {
-      console.error(error)
-      setCartStatus('Add to cart failed')
-      Taro.showToast({ title: 'Failed', icon: 'none' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // --- 3. Payment Flow ---
+  // --- 2. Payment Flow ---
   const createPaymentSession = async (userToken, amount) => {
+    const miniAppApiKey = NanaConfig.API_KEY;
     const payload = {
       amount: amount,
       reference: 'order_' + new Date().getTime() // Unique reference
     };
     
     console.log('--- Creating Payment Session ---');
-    console.log('URL:', NanaConfig.PAYMENT_SESSION_URL);
+    console.log('URL:', 'https://miniapps.nana.sa/api/v2/mobile-user-activities/create-payment-session');
     console.log('Headers:', {
       'Content-Type': 'application/json',
-      'miniapp-api-key': NanaConfig.API_KEY,
+      'miniapp-api-key': miniAppApiKey,
       'miniapp-user-token': `Bearer ${userToken}`
     });
     console.log('Payload:', payload);
 
     return new Promise((resolve, reject) => {
       Taro.request({
-        url: NanaConfig.PAYMENT_SESSION_URL,
+        url: 'https://miniapps.nana.sa/api/v2/mobile-user-activities/create-payment-session',
         method: 'POST',
         header: {
           'Content-Type': 'application/json',
-          'miniapp-api-key': NanaConfig.API_KEY,
+          'miniapp-api-key': miniAppApiKey,
           'miniapp-user-token': `Bearer ${userToken}`
         },
         data: payload,
         success: (res) => {
           console.log('Payment Session Response:', res);
-          if (res.statusCode >= 200 && res.statusCode < 300 && res.data.success) {
+          // Check for both success boolean in body or successful status code
+          if ((res.data && res.data.success) || (res.statusCode >= 200 && res.statusCode < 300)) {
             resolve(res.data);
           } else {
             console.error('Payment Session Error:', res);
@@ -123,15 +97,15 @@ export default function NanaDemo() {
         },
         fail: (err) => {
           console.error('Network Error:', err);
-          reject(new Error('Network error while creating payment session'));
+          reject(new Error(`Network Error: ${err.errMsg || err.message}`));
         }
       });
     });
   }
 
-  const handleCheckout = async () => {
+  const handleCheckout = async (amount) => {
     setLoading(true)
-    setPaymentStatus('Processing Checkout...')
+    setPaymentStatus('Processing Payment...')
     
     try {
       // Step 1: Get User Token
@@ -154,28 +128,33 @@ export default function NanaDemo() {
       console.log('Using Token:', token);
 
       // Step 2: Create Payment Session
-      const sessionRes = await createPaymentSession(token, 100.00); 
+      const sessionRes = await createPaymentSession(token, amount); 
       
       if (!sessionRes.success) {
-        throw new Error('Failed to create payment session');
+        throw new Error('Failed to create payment session (success flag missing)');
       }
 
-      // Step 3: Process Payment via Nana SDK
+      // Step 3: Add Mini App ID
       const accountInfo = Taro.getAccountInfoSync();
+      // Use dynamic appId from accountInfo if available, otherwise fallback to config/default
       const miniAppId = accountInfo.miniProgram.appId || NanaConfig.MINI_APP_ID;
       
+      // Mutate/Prepare session data as per requirements
       const paymentData = {
         ...sessionRes.data,
         mini_app_id: miniAppId
       };
 
+      console.log('Calling orderPayment with:', paymentData);
+
+      // Step 4: Process Payment via Nana SDK
       await NanaConf.orderPayment(paymentData);
       
       setPaymentStatus('Payment Successful!');
       Taro.showToast({ title: 'Paid!', icon: 'success' })
 
     } catch (error) {
-       console.error(error);
+       console.error('Payment process failed:', error);
        setPaymentStatus(`Payment Failed: ${error.message || 'Unknown error'}`);
        Taro.showToast({ title: 'Error', icon: 'none' })
     } finally {
@@ -184,7 +163,7 @@ export default function NanaDemo() {
     }
   }
 
-  // --- 4. Navigation ---
+  // --- 3. Navigation ---
   const handleCloseMiniApp = async () => {
     try {
       await NanaConf.closeMiniApp(NanaConfig.MINI_APP_ID)
@@ -237,10 +216,10 @@ export default function NanaDemo() {
                     </View>
                     <Button 
                       className='btn-add' 
-                      onClick={() => handleAddToCart(car)} 
+                      onClick={() => handleCheckout(car.price)} 
                       disabled={loading}
                     >
-                      Rent Now
+                      Book & Pay
                     </Button>
                   </View>
                 </View>
@@ -250,22 +229,7 @@ export default function NanaDemo() {
         </>
       )}
 
-      {/* 4. Checkout Bar (Fixed Bottom) */}
-      <View className='checkout-bar'>
-        <View className='cart-summary'>
-          <Text className='total-label'>Total Amount</Text>
-          <Text className='total-amount'>100.00 SAR</Text>
-        </View>
-        <Button 
-          className='btn-checkout' 
-          onClick={handleCheckout} 
-          disabled={loading}
-        >
-          Checkout
-        </Button>
-      </View>
-
-      {/* 5. Status Overlays */}
+      {/* 4. Status Overlays */}
       {loading && (
         <View className='loading-overlay'>
           <Text>Loading...</Text>

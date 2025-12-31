@@ -56,9 +56,9 @@ export default defineConfig(async (merge, { command, mode }) => {
         }
       },
       webpackChain(chain) {
-        if (fs.existsSync(path.resolve(__dirname, '../FinClipConf.js'))) {
+        if (fs.existsSync(path.resolve(__dirname, '../NanaConf.js'))) {
           chain.plugin('copyRootConfig')
-            .use(require('copy-webpack-plugin'), [{ patterns: [{ from: 'FinClipConf.js', noErrorOnMissing: true }] }])
+            .use(require('copy-webpack-plugin'), [{ patterns: [{ from: 'NanaConf.js', noErrorOnMissing: true }] }])
         }
       }
     },
