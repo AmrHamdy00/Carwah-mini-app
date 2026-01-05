@@ -1,0 +1,43 @@
+.splash-container {
+  width: 100vw;
+  min-height: 100vh;
+  background: url('../../assets/images/splash-screen.png') no-repeat center center;
+  background-size: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-container {
+  opacity: 0;
+  transform: scale(0.5);
+  animation: pulse 2s infinite ease-in-out;
+}
+
+/* Keyframes for infinite pulsing effect */
+@keyframes pulse {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.8;
+    transform: scale(0.95);
+  }
+}
+
+.logo-container.visible {
+  /* Keep this for initial state if needed, but animation handles loop */
+  opacity: 1;
+  transform: scale(1);
+}
+
+.logo {
+  width: 50vw;
+  height: auto;
+}
+
