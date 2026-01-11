@@ -1,0 +1,61 @@
+.bottom-nav {
+  width: 100%;
+  height: 180rpx; 
+  background-color: #ffffff;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+  z-index: 100;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top-left-radius: 20rpx;
+  border-top-right-radius: 20rpx;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  position: relative;
+  padding-top: 12rpx; /* Push content down to create space from top pointer */
+  box-sizing: border-box;
+}
+
+.nav-pointer {
+  position: absolute;
+  top: 0;
+  width: 40rpx; /* Adjust based on image ratio */
+  height: 10rpx; /* Adjust based on image ratio */
+}
+
+.nav-icon-container {
+  width: 56rpx; /* Increased from 48rpx */
+  height: 56rpx; /* Increased from 48rpx */
+  margin-bottom: 12rpx; /* Increased spacing between icon and label */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-icon-img {
+  width: 100%;
+  height: 100%;
+}
+
+.nav-label {
+  font-size: 22rpx;
+  color: #8A8A8E; /* Light grey from screenshot style */
+  margin-top: 4rpx;
+  font-family: 'Cairo', sans-serif;
+}
+
+.nav-item.active .nav-label {
+  color: #2F313F; /* Dark color from screenshot */
+  font-weight: 600;
+}

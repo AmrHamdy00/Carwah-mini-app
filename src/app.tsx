@@ -1,5 +1,5 @@
 import { PropsWithChildren } from 'react'
-import { useLaunch } from '@tarojs/taro'
+import Taro, { useLaunch } from '@tarojs/taro'
 import { Provider } from 'react-redux'
 import { store } from './store'
 import { setToken } from './store/userSlice'
@@ -10,6 +10,15 @@ function App({ children }: PropsWithChildren<any>) {
 
   useLaunch(() => {
     console.log('App launched.')
+
+    // Load Cairo Font
+    Taro.loadFontFace({
+      family: 'Cairo',
+      source: 'url("https://fonts.gstatic.com/s/cairo/v28/SLXgc1nY6HkvangtZmpQdkhzfH5lkSs2SgRjCAGMQ1z0hGE-24I.woff2")',
+      global: true,
+      success: () => console.log('Cairo font loaded successfully'),
+      fail: (err) => console.error('Failed to load Cairo font', err)
+    })
 
     const fetchUserToken = async () => {
       console.log('Fetching user token via NanaSDK...')
