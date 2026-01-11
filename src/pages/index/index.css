@@ -14,3 +14,18 @@
   height: 100%;
   z-index: -1;
 }
+
+.banner-section {
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.banner-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  /* Since it's an SVG and likely has rounded corners in the design, 
+     we might want to ensure it fits well, but if the SVG itself has the shape, 
+     we might not need border-radius. However, adding it doesn't hurt usually 
+     if the image is rectangular. Based on screenshot, it has rounded corners. */
+}
