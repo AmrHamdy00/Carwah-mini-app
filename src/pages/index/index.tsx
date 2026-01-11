@@ -1,6 +1,7 @@
-import { View, Text } from '@tarojs/components'
+import { View, Text, Image } from '@tarojs/components'
 import { useLoad } from '@tarojs/taro'
 import MainLayout from '../../components/MainLayout'
+import bgImg from '../../assets/images/bg.png'
 import './index.css'
 
 export default function Index() {
@@ -9,10 +10,14 @@ export default function Index() {
   })
 
   return (
-    <MainLayout currentTab='home'>
+    <MainLayout 
+      currentTab='home' 
+      isHome={true}
+      headerTitle='إيجار سيارات'
+      headerSubtitle='اجر سيارتك الآن مع كروة'
+    >
       <View className='index-content'>
-        <Text>Welcome to Carwah</Text>
-        {/* Content goes here */}
+        <Image src={bgImg} className='index-bg' mode='aspectFill' />
       </View>
     </MainLayout>
   )

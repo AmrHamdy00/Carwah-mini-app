@@ -1,5 +1,5 @@
 import { View } from '@tarojs/components'
-import Header from '../Header'
+import Header, { HeaderAlignment } from '../Header'
 import BottomNav from '../BottomNav'
 import { ReactNode } from 'react'
 import './index.css'
@@ -7,16 +7,43 @@ import './index.css'
 interface MainLayoutProps {
   children: ReactNode;
   currentTab?: string;
+  headerTitle?: string;
+  headerSubtitle?: string;
+  showBackArrow?: boolean;
+  headerAlign?: HeaderAlignment;
+  onHeaderTitleClick?: () => void;
+  headerLeftItem?: ReactNode;
+  isHome?: boolean;
+  showBottomNav?: boolean;
 }
 
-export default function MainLayout({ children, currentTab = 'home' }: MainLayoutProps) {
+export default function MainLayout({ 
+  children, 
+  currentTab = 'home',
+  headerTitle,
+  headerSubtitle,
+  showBackArrow,
+  headerAlign,
+  onHeaderTitleClick,
+  headerLeftItem,
+  isHome = false,
+  showBottomNav = false
+}: MainLayoutProps) {
   return (
     <View className='main-layout'>
-      <Header />
+      <Header 
+        title={headerTitle}
+        subtitle={headerSubtitle}
+        showBackArrow={showBackArrow}
+        align={headerAlign}
+        onTitleClick={onHeaderTitleClick}
+        leftItem={headerLeftItem}
+        isHome={isHome}
+      />
       <View className='content-area'>
         {children}
       </View>
-      <BottomNav currentTab={currentTab} />
+      {(isHome || showBottomNav) && <BottomNav currentTab={currentTab} />}
     </View>
   )
 }

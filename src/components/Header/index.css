@@ -1,22 +1,41 @@
-.header {
+.header-content {
   width: 100%;
-  background-color: #ffffff;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  height: 100%;
+  display: flex;
+  /* justify-content is now handled via inline style in JS */
+  align-items: center;
+  padding-left: 40rpx;
+  padding-right: 40rpx;
   box-sizing: border-box;
 }
 
-.header-content {
-  width: 100%;
-  height: 44px; /* Standard navbar height */
+.header-text-container {
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end; /* Align text to the right */
 }
 
-.header-logo {
-  width: 120px;
-  height: 30px; /* Slightly smaller to fit nicely */
+.header-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin-bottom: 4rpx;
+}
+
+.header-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1A1B2E; /* Dark Blue */
+  margin-right: 16rpx; /* Space between title and arrow */
+}
+
+.header-arrow {
+  width: 32rpx;
+  height: 32rpx;
+}
+
+.header-subtitle {
+  font-size: 26rpx;
+  color: #8A94A6;
+  font-weight: 400;
 }

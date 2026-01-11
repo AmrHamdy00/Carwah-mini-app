@@ -1,4 +1,5 @@
 import { View, Text, Image } from '@tarojs/components'
+import Taro from '@tarojs/taro'
 import homeIcon from '../../assets/icons/bottombar/home.png'
 import homeSelectedIcon from '../../assets/icons/bottombar/home-selcted.png'
 import rentalsIcon from '../../assets/icons/bottombar/rentals.png'
@@ -25,8 +26,30 @@ export default function BottomNav({ currentTab = 'home', onTabChange }: BottomNa
   ]
 
   const handleTabClick = (key: string) => {
+    if (key === currentTab) return
+
     if (onTabChange) {
       onTabChange(key)
+    }
+
+    let url = ''
+    switch (key) {
+      case 'home':
+        url = '/pages/index/index'
+        break
+      case 'orders':
+        url = '/pages/orders/index'
+        break
+      case 'profile':
+        url = '/pages/profile/index'
+        break
+      case 'more':
+        url = '/pages/more/index'
+        break
+    }
+
+    if (url) {
+      Taro.redirectTo({ url })
     }
   }
 
