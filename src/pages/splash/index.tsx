@@ -19,7 +19,7 @@ export default function Splash() {
           console.error('Navigation failed:', err)
         }
       })
-    }, 3000)
+    }, 1500)
   })
 
   return (
